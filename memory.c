@@ -180,18 +180,20 @@ struct MEMORY_BLOCK next_fit_allocate(int request_size, struct MEMORY_BLOCK memo
 void release_memory(struct MEMORY_BLOCK freed_block, struct MEMORY_BLOCK memory_map[MAPMAX], int *map_cnt) {
     for (int i = 0; i < *map_cnt; i++) {
         if (memory_map[i].start_address == freed_block.start_address) {
+            memory_map[i].process_id = 0;
             if (freed_block.start_address > 0) {
                 if (memory_map[i - 1].process_id == 0) {
                     memory_map[i].start_address = memory_map[i - 1].start_address;
                     memory_map[i].segment_size += memory_map[i - 1].segment_size;
-                    memmove(&memory_map[i], &memory_map[i - 1], (*map_cnt - (i - 1)) * sizeof(struct MEMORY_BLOCK));
+                    memmove(&memory_map[i - 1], &memory_map[i], (*map_cnt - i) * sizeof(struct MEMORY_BLOCK));
+                    i--; // accounting for decrement due to memmove, necessary if right block needs to be merged
                     (*map_cnt)--;
                 }
             }
             if (memory_map[i + 1].process_id == 0) {
                 memory_map[i].end_address = memory_map[i + 1].end_address;
                 memory_map[i].segment_size += memory_map[i + 1].segment_size;
-                memmove(&memory_map[i], &memory_map[i + 1], (*map_cnt - (i + 1)) * sizeof(struct MEMORY_BLOCK));
+                memmove(&memory_map[i + 1], &memory_map[i + 2], (*map_cnt - (i - 2)) * sizeof(struct MEMORY_BLOCK));
                 (*map_cnt)--;
             }
         }
